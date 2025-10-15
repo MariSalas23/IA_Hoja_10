@@ -1,6 +1,7 @@
 import numpy as np
 
 class Policy:
+    
     def __init__(self, init_mean_value=0):
         # estimación inicial (optimista/pesimista) común a todos los brazos
         self.init_mean_value = init_mean_value
@@ -33,7 +34,6 @@ class Policy:
         # devolver copia defensiva
         return self._qhat.copy()
     
-
 class EpsilonGreedyPolicy(Policy):
     def __init__(self, epsilon, init_mean_value=0):
         super().__init__(init_mean_value=init_mean_value)
@@ -62,7 +62,6 @@ class EpsilonGreedyPolicy(Policy):
         # Explotar: elegir el de mayor media estimada
         return int(np.argmax(self._qhat))
     
-
 class UCB(Policy):
     def __init__(self, c, init_mean_value=0):
         super().__init__(init_mean_value=init_mean_value)
@@ -73,19 +72,20 @@ class UCB(Policy):
 
     @property
     def exploration_terms(self):
-        # usar t empezando en 1 para el logaritmo (evita ln(0) y cuadra con la guía)
-        t_for_log = self.t + 1
+        # UCB1 clásico: sqrt( 2 * ln(t) / N_t(a) ), con t = jugadas completadas (>=1)
+        t_for_log = max(1, self.t)  # sin +1
         out = np.zeros(self._n_arms, dtype=float)
         mask = self._pulls > 0
-        out[mask] = np.sqrt(np.log(float(t_for_log)) / self._pulls[mask])
+        # factor 2 dentro del log-term
+        out[mask] = np.sqrt((2.0 * np.log(float(t_for_log))) / self._pulls[mask])
         return out
 
     def choose(self):
-        # arranque: prueba cada brazo una vez en orden determinista
+        # warm-start determinista: probar cada brazo una vez en orden 0,1,2,...
         untried = np.where(self._pulls == 0)[0]
         if untried.size > 0:
             return int(untried[0])
 
-        # puntuaciones UCB = media empírica + c * bonus
+        # score = q̂ + c * exploration
         scores = self._qhat + self.c * self.exploration_terms
-        return int(np.argmax(scores))
+        return int(np.argmax(scores))  # empates → índice menor

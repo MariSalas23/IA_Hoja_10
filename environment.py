@@ -68,4 +68,3 @@ class BanditProblem:
             log['cumulative_regret'].append(acc_regret)
 
         return pd.DataFrame(log)
-
