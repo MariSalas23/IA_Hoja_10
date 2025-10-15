@@ -1,7 +1,7 @@
 import numpy as np
 
 class Policy:
-    
+
     def __init__(self, init_mean_value=0):
         # estimación inicial (optimista/pesimista) común a todos los brazos
         self.init_mean_value = init_mean_value
@@ -72,12 +72,10 @@ class UCB(Policy):
 
     @property
     def exploration_terms(self):
-        # UCB1 clásico: sqrt( 2 * ln(t) / N_t(a) ), con t = jugadas completadas (>=1)
-        t_for_log = max(1, self.t)  # sin +1
+        t_for_log = self.t + 1.0        # 1-based para esta decisión
         out = np.zeros(self._n_arms, dtype=float)
         mask = self._pulls > 0
-        # factor 2 dentro del log-term
-        out[mask] = np.sqrt((2.0 * np.log(float(t_for_log))) / self._pulls[mask])
+        out[mask] = np.sqrt((2.0 * np.log(t_for_log)) / self._pulls[mask])
         return out
 
     def choose(self):
