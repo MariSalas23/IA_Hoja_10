@@ -50,7 +50,7 @@ class EpsilonGreedyPolicy(Policy):
         return float(self.epsilon)
 
     def choose(self) -> int:
-        # ---- fase de arranque: seleccionar cualquier brazo jamás probado (en orden) ----
+        # ---- arranque: seleccionar cualquier brazo jamás probado (en orden) ----
         untried = np.where(self._pulls == 0)[0]
         if untried.size > 0:
             return int(untried[0])
@@ -73,11 +73,11 @@ class UCB(Policy):
 
     @property
     def exploration_terms(self):
-        # para la primera puntuación usa ln(1)=0 y evita ln(0)
-        t_for_log = max(1, self.t)
+        # usar t empezando en 1 para el logaritmo (evita ln(0) y cuadra con la guía)
+        t_for_log = self.t + 1
         out = np.zeros(self._n_arms, dtype=float)
         mask = self._pulls > 0
-        out[mask] = np.sqrt(np.log(t_for_log) / self._pulls[mask])
+        out[mask] = np.sqrt(np.log(float(t_for_log)) / self._pulls[mask])
         return out
 
     def choose(self):
