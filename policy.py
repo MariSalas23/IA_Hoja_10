@@ -72,10 +72,10 @@ class UCB(Policy):
 
     @property
     def exploration_terms(self):
-        t_for_log = self.t + 1.0        # 1-based para esta decisión
+        t_for_log = max(1, int(self.t))  # sin +1
         out = np.zeros(self._n_arms, dtype=float)
         mask = self._pulls > 0
-        out[mask] = np.sqrt((2.0 * np.log(t_for_log)) / self._pulls[mask])
+        out[mask] = np.sqrt(np.log(float(t_for_log)) / self._pulls[mask])
         return out
 
     def choose(self):
