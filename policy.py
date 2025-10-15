@@ -63,6 +63,7 @@ class EpsilonGreedyPolicy(Policy):
         return int(np.argmax(self._qhat))
     
 class UCB(Policy):
+    
     def __init__(self, c, init_mean_value=0):
         super().__init__(init_mean_value=init_mean_value)
         self.c = float(c)
@@ -72,18 +73,17 @@ class UCB(Policy):
 
     @property
     def exploration_terms(self):
-        t_for_log = max(1, int(self.t))  # sin +1
-        out = np.zeros(self._n_arms, dtype=float)
-        mask = self._pulls > 0
-        out[mask] = np.sqrt(np.log(float(t_for_log)) / self._pulls[mask])
+        t_for_log = max(1, int(self.t))
+        out = np.empty(self._n_arms, dtype=float)
+        # N==0  -> +inf; N>0 -> sqrt( ln(t) / N )
+        zero_mask = (self._pulls == 0)
+        out[zero_mask] = np.inf
+        nz = ~zero_mask
+        if np.any(nz):
+            out[nz] = np.sqrt(np.log(float(t_for_log)) / self._pulls[nz])
         return out
 
     def choose(self):
-        # warm-start determinista: probar cada brazo una vez en orden 0,1,2,...
-        untried = np.where(self._pulls == 0)[0]
-        if untried.size > 0:
-            return int(untried[0])
-
-        # score = q̂ + c * exploration
+        # Sin warm-start explícito: UCB ya da +inf a brazos no probados
         scores = self._qhat + self.c * self.exploration_terms
-        return int(np.argmax(scores))  # empates → índice menor
+        return int(np.argmax(scores))  # empates -> índice menor
